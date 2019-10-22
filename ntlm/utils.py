@@ -13,7 +13,7 @@ from .structures.negotiate_flags import NegotiateFlags
 from Crypto.Cipher import ARC4
 
 
-def ntlm_context(
+def make_ntlm_context(
     username: str,
     authentication_secret: Union[str, bytes],
     lm_compatibility_level: int = 3,
