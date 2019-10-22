@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ntlm',
-    version='0.9.11',
+    version='0.9.12',
     url='https://github.com/vphpersson/ntlm',
     author='vph',
     classifiers=[
