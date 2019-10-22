@@ -7,7 +7,7 @@ from .base import NTLMMessage
 from ..structures.negotiate_flags import NegotiateFlags
 from ..structures.ntlmv2_response import NTLMv2Response
 from ..structures.version import Version
-from ..utils import get_message_bytes_data, get_message_bytes_data_str
+from ..internal_utils import get_message_bytes_data, get_message_bytes_data_str
 from ..exceptions import MalformedAuthenticateMessageError
 
 

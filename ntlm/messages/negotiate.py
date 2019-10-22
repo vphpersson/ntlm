@@ -6,7 +6,7 @@ from struct import unpack as struct_unpack, pack as struct_pack
 from .base import NTLMMessage
 from ..structures.version import Version
 from ..structures.negotiate_flags import NegotiateFlags
-from ..utils import get_message_bytes_data_str
+from ..internal_utils import get_message_bytes_data_str
 from ..exceptions import MalformedNegotiateMessageError
 
 
