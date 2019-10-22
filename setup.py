@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='ntlm',
-    version='0.9.1',
+    version='0.9.11',
     url='https://github.com/vphpersson/ntlm',
     author='vph',
     classifiers=[
@@ -11,6 +11,6 @@ setup(
         'Topic :: Software Development :: Libraries',
         'Programming Language :: Python :: 3.7',
     ],
-    packages=['ntlm'],
+    packages=find_packages(),
     python_requires='>=3.7'
 )
