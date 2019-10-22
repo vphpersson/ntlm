@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Generator
 from ipaddress import IPv4Address, IPv6Address
 from copy import deepcopy
 from secrets import token_bytes
@@ -19,7 +19,7 @@ def make_ntlm_context(
     lm_compatibility_level: int = 3,
     domain_name: str = 'WORKSTATION',
     workstation_name: Optional[Union[str, IPv4Address, IPv6Address]] = None
-):
+) -> Generator[Union[NegotiateMessage, AuthenticateMessage], ChallengeMessage, None]:
     if lm_compatibility_level == 0:
         negotiate_message: NegotiateMessage = NegotiateMessage.make_ntlm_v1_negotiate()
         yield negotiate_message
@@ -34,7 +34,7 @@ def make_ntlm_context(
         # TODO: Use proper exception.
         raise ValueError
 
-    challenge_message: ChallengeMessage = yield
+    challenge_message = yield
 
     if lm_compatibility_level == 0:
         lm_challenge_response, nt_challenge_response = produce_lm_and_ntlm_response(
