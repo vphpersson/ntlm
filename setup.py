@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ntlm',
-    version='0.9.13',
+    version='0.9.14',
     url='https://github.com/vphpersson/ntlm',
     author='vph',
     classifiers=[
@@ -12,5 +12,6 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     packages=find_packages(),
+    install_requires=['pycryptodome'],
     python_requires='>=3.7'
 )
