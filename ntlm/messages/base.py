@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar, Optional, Type
 from abc import ABC, abstractmethod
@@ -18,7 +19,7 @@ class NTLMMessage(ABC):
 
     @classmethod
     @abstractmethod
-    def from_bytes(cls, message_bytes: bytes) -> 'NTLMMessage':
+    def from_bytes(cls, message_bytes: bytes) -> NTLMMessage:
         pass
 
     @abstractmethod

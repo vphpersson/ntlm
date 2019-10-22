@@ -9,7 +9,7 @@ from msdsalgs.time import filetime_to_datetime
 from msdsalgs.utils import make_mask_class
 
 from .single_host_data import SingleHostData
-from ..utils import get_message_bytes_data
+from ..internal_utils import get_message_bytes_data
 
 
 class MalformedAvPairSequenceError(Exception):

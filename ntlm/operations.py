@@ -164,3 +164,31 @@ def produce_lmv2_and_ntlmv2_response(
     lm_challenge_response = 24 * b'\x00'
 
     return nt_challenge_response, lm_challenge_response, session_base_key
+
+
+def ntow_v2_from_nt_hash(nt_hash: bytes, user: str, domain: str) -> bytes:
+    return hmac_new(
+        key=nt_hash,
+        msg=(user.upper() + domain).encode('utf-16-le'),
+        digestmod=hashlib_md5
+    ).digest()
+
+
+def ntowf_v1(input_bytes: bytes) -> bytes:
+    return compute_nt_hash(input_bytes=input_bytes)
+
+
+def ntowf_v2(password: str, user: str, domain: str) -> bytes:
+    return ntow_v2_from_nt_hash(
+        nt_hash=compute_nt_hash(input_bytes=password.encode('utf-16-le')),
+        user=user,
+        domain=domain
+    )
+
+
+def lmowf_v1(input_bytes: bytes) -> bytes:
+    return compute_lm_hash(input_bytes=input_bytes)
+
+
+def lmowf_v2(password: str, user: str, domain: str) -> bytes:
+    return ntowf_v2(password=password, user=user, domain=domain)

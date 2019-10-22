@@ -7,7 +7,7 @@ from .base import NTLMMessage
 from ..structures.negotiate_flags import NegotiateFlags
 from ..structures.av_pair import AVPairSequence
 from ..structures.version import Version
-from ..utils import get_message_bytes_data_str, get_message_bytes_data
+from ..internal_utils import get_message_bytes_data_str, get_message_bytes_data
 from ..exceptions import MalformedChallengeMessageError
 
 
@@ -20,8 +20,10 @@ class ChallengeMessage(NTLMMessage):
     os_version: Optional[Version] = None
 
     message_type_id: ClassVar[int] = 2
+    _reserved: ClassVar[bytes] = 8 * b'\x00'
     _malformed_exception_class: ClassVar = MalformedChallengeMessageError
 
+    # TODO: Support `strict` mode?
     @classmethod
     def from_bytes(cls, message_bytes: bytes) -> ChallengeMessage:
 
@@ -73,8 +75,7 @@ class ChallengeMessage(NTLMMessage):
             target_name_fields,
             struct_pack('<I', self.negotiate_flags.to_mask().value),
             self.challenge,
-            # TODO: Use `ClassVar`.
-            8 * b'\x00',
+            self._reserved,
             target_info_fields,
             version_bytes,
             target_name_bytes,
