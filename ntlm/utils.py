@@ -20,21 +20,31 @@ def make_ntlm_context(
     domain_name: str = 'WORKSTATION',
     workstation_name: Optional[Union[str, IPv4Address, IPv6Address]] = None
 ) -> Generator[Union[NegotiateMessage, AuthenticateMessage], ChallengeMessage, None]:
+    """
+    Make an NTLM authentication context.
+
+    :param username: The username with which to authenticate.
+    :param authentication_secret: A password or NT hash with which to authenticate.
+    :param lm_compatibility_level:
+    :param domain_name: The domain name to be provided in the authenticate message.
+    :param workstation_name: The workstation name to be provided in the authenticate message.
+    :return: A generator that produces a negotiate message, accepts a challenge message, and produces an authenticate
+        message.
+    """
+
     if lm_compatibility_level == 0:
         negotiate_message: NegotiateMessage = NegotiateMessage.make_ntlm_v1_negotiate()
-        yield negotiate_message
     elif lm_compatibility_level == 1:
         raise NotImplementedError
     elif lm_compatibility_level == 2:
         raise NotImplementedError
     elif 3 <= lm_compatibility_level <= 5:
         negotiate_message: NegotiateMessage = NegotiateMessage.make_ntlm_v2_negotiate()
-        yield negotiate_message
     else:
         # TODO: Use proper exception.
         raise ValueError
 
-    challenge_message = yield
+    challenge_message = yield negotiate_message
 
     if lm_compatibility_level == 0:
         lm_challenge_response, nt_challenge_response = produce_lm_and_ntlm_response(
@@ -71,7 +81,7 @@ def make_ntlm_context(
             ).filetime
         )
 
-        "If NTLM v2 is used, KeyExchangeKey MUST be set to the given 128-bit SessionBaseKey value."
+        # "If NTLM v2 is used, KeyExchangeKey MUST be set to the given 128-bit SessionBaseKey value."
         key_exchange_key: bytes = session_base_key
         if challenge_message.negotiate_flags.negotiate_key_exch:
             exported_session_key = token_bytes(nbytes=16)
