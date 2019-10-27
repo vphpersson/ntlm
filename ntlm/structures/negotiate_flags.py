@@ -1,6 +1,6 @@
 from enum import IntFlag
 
-from ad_data_gatherer.utils.type_conversion import make_mask_class
+from msdsalgs.utils import make_mask_class
 
 
 class NegotiateFlagsMask(IntFlag):
