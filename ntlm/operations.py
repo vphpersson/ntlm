@@ -9,9 +9,9 @@ from msdsalgs.time import datetime_to_filetime
 from msdsalgs.hashing import compute_lm_hash, compute_nt_hash
 from msdsalgs.crypto import transform_des_key
 
-from .structures.av_pair import AVPairSequence
-from .structures.ntlmv2_response import NTLMv2Response
-from .structures.ntlmv2_client_challenge import NTLMv2ClientChallenge
+from ntlm.structures.av_pair import AVPairSequence
+from ntlm.structures.ntlmv2_response import NTLMv2Response
+from ntlm.structures.ntlmv2_client_challenge import NTLMv2ClientChallenge
 
 
 def compute_net_ntlm_v2_hash(key: bytes, server_challenge_bytes: bytes, client_temp_bytes: bytes) -> bytes:

@@ -3,12 +3,12 @@ from ipaddress import IPv4Address, IPv6Address
 from copy import deepcopy
 from secrets import token_bytes
 
-from .messages.negotiate import NegotiateMessage
-from .messages.challenge import ChallengeMessage
-from .messages.authenticate import AuthenticateMessage
-from .operations import produce_lm_and_ntlm_response, produce_lmv2_and_ntlmv2_response, lmowf_v2, ntowf_v2
-from .structures.av_pair import TimestampAVPair
-from .structures.negotiate_flags import NegotiateFlags
+from ntlm.messages.negotiate import NegotiateMessage
+from ntlm.messages.challenge import ChallengeMessage
+from ntlm.messages.authenticate import AuthenticateMessage
+from ntlm.operations import produce_lm_and_ntlm_response, produce_lmv2_and_ntlmv2_response, lmowf_v2, ntowf_v2
+from ntlm.structures.av_pair import TimestampAVPair
+from ntlm.structures.negotiate_flags import NegotiateFlags
 
 from Crypto.Cipher import ARC4
 
