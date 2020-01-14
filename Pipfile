@@ -6,8 +6,8 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-msdsalgs = {git = "https://github.com/vphpersson/msdsalgs"}
+msdsalgs = {file = "https://github.com/vphpersson/msdsalgs/tarball/master"}
 pycryptodome = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"

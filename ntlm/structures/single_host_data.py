@@ -1,19 +1,22 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from struct import unpack as struct_unpack, pack as struct_pack
+from typing import ClassVar
 
 # TODO: Add `ClassVar`s.
 
 
 @dataclass
 class SingleHostData:
+    _Z4: ClassVar[bytes] = bytes(4)
+
     _size: int
     custom_data: bytes
     machine_id: bytes
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> 'SingleHostData':
-        z4: bytes = data[4:8]
-        if z4 != b'\x00\x00\x00\x00':
+    def from_bytes(cls, data: bytes) -> SingleHostData:
+        if data[4:8] != cls._Z4:
             # TODO: Use proper exception.
             raise ValueError
 
@@ -26,7 +29,7 @@ class SingleHostData:
     def __bytes__(self) -> bytes:
         return b''.join([
             struct_pack('<I', self._size),
-            4 * b'\x00',
+            self._Z4,
             self.custom_data,
             self.machine_id
         ])

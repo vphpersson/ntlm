@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from struct import unpack as struct_unpack, pack as struct_pack
 
-from .av_pair import AVPairSequence
+from ntlm.structures.av_pair import AVPairSequence
 
 
 @dataclass
