@@ -89,7 +89,7 @@ class AVPair(ABC):
                 timestamp=filetime_to_datetime(filetime=struct_unpack('<Q', value)[0])
             )
         elif av_id == AvId.MsvAvFlags:
-            return FlagsAVPair(flags=AvFlags.from_mask(AvFlagsMask(struct_unpack('<I', value)[0])))
+            return FlagsAVPair(flags=AvFlags.from_int(AvFlagsMask(struct_unpack('<I', value)[0])))
         elif av_id == AvId.MsvAvTargetName:
             return TargetNameAVPair(target_name=value.decode(encoding='utf-16-le'))
         elif av_id == AvId.MsvChannelBindings:
@@ -187,7 +187,7 @@ class FlagsAVPair(AVPair):
         return AvId.MsvAvFlags
 
     def __bytes__(self) -> bytes:
-        return self._to_bytes_base(value_bytes=struct_pack('<I', self.flags.to_mask().value))
+        return self._to_bytes_base(value_bytes=struct_pack('<I', int(self.flags)))
 
 
 @dataclass
