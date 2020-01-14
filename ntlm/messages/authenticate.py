@@ -34,7 +34,7 @@ class AuthenticateMessage(NTLMMessage):
             message_bytes=message_bytes
         )
 
-        flags = NegotiateFlags.from_mask(struct_unpack('<I', message_bytes[60:64])[0])
+        flags = NegotiateFlags.from_int(struct_unpack('<I', message_bytes[60:64])[0])
 
         nt_challenge_response_bytes: bytes = get_message_bytes_data(
             message_bytes,
@@ -139,7 +139,7 @@ class AuthenticateMessage(NTLMMessage):
             user_name_fields,
             workstation_fields,
             encrypted_random_session_key_fields,
-            struct_pack('<I', self.negotiate_flags.to_mask().value),
+            struct_pack('<I', int(self.negotiate_flags)),
             version_bytes,
             mic_bytes,
             self.lm_challenge_response,

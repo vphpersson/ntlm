@@ -33,7 +33,7 @@ class ChallengeMessage(NTLMMessage):
             message_bytes=message_bytes
         )
 
-        flags = NegotiateFlags.from_mask(struct_unpack('<I', message_bytes[20:24])[0])
+        flags = NegotiateFlags.from_int(struct_unpack('<I', message_bytes[20:24])[0])
 
         return cls(
             target_name=get_message_bytes_data_str(
@@ -73,7 +73,7 @@ class ChallengeMessage(NTLMMessage):
             NTLMMessage.signature,
             struct_pack('<I', self.message_type_id),
             target_name_fields,
-            struct_pack('<I', self.negotiate_flags.to_mask().value),
+            struct_pack('<I', int(self.negotiate_flags)),
             self.challenge,
             self._reserved,
             target_info_fields,

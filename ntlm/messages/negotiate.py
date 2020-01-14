@@ -29,7 +29,7 @@ class NegotiateMessage(NTLMMessage):
             message_bytes=message_bytes
         )
 
-        flags = NegotiateFlags.from_mask(struct_unpack('<I', message_bytes[12:16])[0])
+        flags = NegotiateFlags.from_int(struct_unpack('<I', message_bytes[12:16])[0])
 
         return cls(
             negotiate_flags=flags,
@@ -137,7 +137,7 @@ class NegotiateMessage(NTLMMessage):
         return b''.join([
             NTLMMessage.signature,
             struct_pack('<I', NegotiateMessage.message_type_id),
-            struct_pack('<I', self.negotiate_flags.to_mask().value),
+            struct_pack('<I', int(self.negotiate_flags)),
             domain_name_fields,
             workstation_fields,
             version_bytes,
