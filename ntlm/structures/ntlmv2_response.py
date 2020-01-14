@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-from .ntlmv2_client_challenge import NTLMv2ClientChallenge
+from ntlm.structures.ntlmv2_client_challenge import NTLMv2ClientChallenge
 
 
 @dataclass

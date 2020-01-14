@@ -1,6 +1,6 @@
 from enum import IntFlag
 
-from msdsalgs.utils import make_mask_class
+from msdsalgs.utils import Mask
 
 
 class NegotiateFlagsMask(IntFlag):
@@ -29,4 +29,4 @@ class NegotiateFlagsMask(IntFlag):
     NTLMSSP_NEGOTIATE_56 = 0x80000000
 
 
-NegotiateFlags = make_mask_class(NegotiateFlagsMask, prefix='NTLMSSP_')
+NegotiateFlags = Mask.make_class(NegotiateFlagsMask, prefix='NTLMSSP_')

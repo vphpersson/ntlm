@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import Optional, ClassVar
 from struct import unpack as struct_unpack, pack as struct_pack
 
-from .base import NTLMMessage
-from ..structures.negotiate_flags import NegotiateFlags
-from ..structures.av_pair import AVPairSequence
-from ..structures.version import Version
-from ..internal_utils import get_message_bytes_data_str, get_message_bytes_data
-from ..exceptions import MalformedChallengeMessageError
+from ntlm.messages import NTLMMessage
+from ntlm.structures.negotiate_flags import NegotiateFlags
+from ntlm.structures.av_pair import AVPairSequence
+from ntlm.structures.version import Version
+from ntlm.internal_utils import get_message_bytes_data_str, get_message_bytes_data
+from ntlm.exceptions import MalformedChallengeMessageError
 
 
 @dataclass

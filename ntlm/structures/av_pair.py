@@ -6,10 +6,10 @@ from datetime import datetime
 from typing import List
 
 from msdsalgs.time import filetime_to_datetime
-from msdsalgs.utils import make_mask_class
+from msdsalgs.utils import Mask
 
-from .single_host_data import SingleHostData
-from ..internal_utils import get_message_bytes_data
+from ntlm.structures.single_host_data import SingleHostData
+from ntlm.internal_utils import get_message_bytes_data
 
 
 class MalformedAvPairSequenceError(Exception):
@@ -33,7 +33,7 @@ class AvFlagsMask(IntFlag):
     SPN_UNTRUSTED_SOURCE = 0x00000004
 
 
-AvFlags = make_mask_class(AvFlagsMask)
+AvFlags = Mask.make_class(AvFlagsMask)
 
 
 class AvId(IntEnum):
