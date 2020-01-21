@@ -60,6 +60,7 @@ class AVPair(ABC):
     """
 
     AV_ID: ClassVar[AvId] = NotImplemented
+    LABEL: ClassVar[str] = NotImplemented
 
     def _to_bytes_base(self, value_bytes: bytes) -> bytes:
         return struct_pack('<HH', self.AV_ID, len(value_bytes)) + value_bytes
@@ -109,6 +110,8 @@ class AVPair(ABC):
 @dataclass
 class ComputerNameAVPair(AVPair):
     AV_ID = AvId.MsvAvNbComputerName
+    LABEL = 'Server NetBIOS computer name'
+
     computer_name: str
 
     def get_value(self) -> str:
@@ -121,6 +124,8 @@ class ComputerNameAVPair(AVPair):
 @dataclass
 class DomainNameAVPair(AVPair):
     AV_ID = AvId.MsvAvNbDomainName
+    LABEL = 'Server NetBIOS domain name'
+
     domain_name: str
 
     def get_value(self) -> str:
@@ -133,6 +138,8 @@ class DomainNameAVPair(AVPair):
 @dataclass
 class DnsComputerNameAVPair(AVPair):
     AV_ID = AvId.MsvAvDnsComputerName
+    LABEL = 'Server FQDN'
+
     dns_comptuer_name: str
 
     def get_value(self) -> str:
@@ -145,6 +152,8 @@ class DnsComputerNameAVPair(AVPair):
 @dataclass
 class DnsDomainNameAVPair(AVPair):
     AV_ID = AvId.MsvAvDnsDomainName
+    LABEL = 'Domain FQDN'
+
     dns_domain_name: str
 
     def get_value(self) -> str:
@@ -157,6 +166,8 @@ class DnsDomainNameAVPair(AVPair):
 @dataclass
 class DnsTreeNameAVPair(AVPair):
     AV_ID = AvId.MsvAvDnsTreeName
+    LABEL = 'Forest FQDN'
+
     dns_tree_name: str
 
     def get_value(self) -> str:
@@ -169,6 +180,8 @@ class DnsTreeNameAVPair(AVPair):
 @dataclass
 class TimestampAVPair(AVPair):
     AV_ID = AvId.MsvAvTimestamp
+    LABEL = 'Server time'
+
     # NOTE: When converting a `FILETIME` to a `datetime` there is a loss of precision. To have deserialization return
     # the same value as was input, we stored the input original, input `FILETIME` value.
     filetime: bytes
@@ -184,6 +197,8 @@ class TimestampAVPair(AVPair):
 @dataclass
 class FlagsAVPair(AVPair):
     AV_ID = AvId.MsvAvFlags
+    LABEL = 'Configuration'
+
     flags: AvFlags
 
     def get_value(self) -> AvFlags:
@@ -196,6 +211,8 @@ class FlagsAVPair(AVPair):
 @dataclass
 class TargetNameAVPair(AVPair):
     AV_ID = AvId.MsvAvTargetName
+    LABEL = 'Server SPN'
+
     target_name: str
 
     def get_value(self) -> str:
@@ -208,6 +225,8 @@ class TargetNameAVPair(AVPair):
 @dataclass
 class ChannelBindingsAVPair(AVPair):
     AV_ID = AvId.MsvChannelBindings
+    LABEL = 'Channel binding hash'
+
     channel_bindings: bytes
 
     def get_value(self) -> bytes:
@@ -220,6 +239,8 @@ class ChannelBindingsAVPair(AVPair):
 @dataclass
 class SingleHostDataAVPair(AVPair):
     AV_ID = AvId.MsvAvSingleHost
+    LABEL = 'Single host data'
+
     single_host_data: SingleHostData
 
     def get_value(self) -> SingleHostData:
