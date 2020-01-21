@@ -3,52 +3,46 @@ from dataclasses import dataclass
 from typing import Optional, ClassVar
 from struct import unpack as struct_unpack, pack as struct_pack
 
-from ntlm.messages import NTLMMessage
+from ntlm.messages import Message, register_ntlm_message
 from ntlm.structures.negotiate_flags import NegotiateFlags
 from ntlm.structures.av_pair import AVPairSequence
 from ntlm.structures.version import Version
 from ntlm.internal_utils import get_message_bytes_data_str, get_message_bytes_data
-from ntlm.exceptions import MalformedChallengeMessageError
+from ntlm.exceptions import MalformedMessageError, MalformedChallengeMessageError
 
 
+@register_ntlm_message
 @dataclass
-class ChallengeMessage(NTLMMessage):
+class ChallengeMessage(Message):
+    MESSAGE_TYPE_ID: ClassVar[int] = 2
+    MALFORMED_MESSAGE_ERROR_CLASS: ClassVar[MalformedMessageError] = MalformedChallengeMessageError
+    _RESERVED: ClassVar[bytes] = bytes(8)
+
     negotiate_flags: NegotiateFlags
     target_name: str
     challenge: bytes
     target_info: Optional[AVPairSequence] = None
     os_version: Optional[Version] = None
 
-    message_type_id: ClassVar[int] = 2
-    _reserved: ClassVar[bytes] = 8 * b'\x00'
-    _malformed_exception_class: ClassVar = MalformedChallengeMessageError
-
     # TODO: Support `strict` mode?
     @classmethod
-    def from_bytes(cls, message_bytes: bytes) -> ChallengeMessage:
-
-        cls.check_signature(signature_data=struct_unpack('<8s', message_bytes[0:8])[0])
-        cls.check_message_type(
-            message_type_id=struct_unpack('<I', message_bytes[8:12])[0],
-            message_bytes=message_bytes
-        )
-
-        flags = NegotiateFlags.from_int(struct_unpack('<I', message_bytes[20:24])[0])
+    def _from_bytes(cls, data: bytes) -> ChallengeMessage:
+        flags = NegotiateFlags.from_int(struct_unpack('<I', data[20:24])[0])
 
         return cls(
             target_name=get_message_bytes_data_str(
-                message_bytes,
-                *struct_unpack('<HHI', message_bytes[12:20])
+                data,
+                *struct_unpack('<HHI', data[12:20])
             ) if flags.request_target else None,
             negotiate_flags=flags,
-            challenge=message_bytes[24:32],
+            challenge=data[24:32],
             target_info=AVPairSequence.from_bytes(
                 data=get_message_bytes_data(
-                    message_bytes,
-                    *struct_unpack('<HHI', message_bytes[40:48])
+                    data,
+                    *struct_unpack('<HHI', data[40:48])
                 )
             ) if flags.negotiate_target_info else None,
-            os_version=Version(*struct_unpack('<BBH', message_bytes[48:52])) if flags.negotiate_version else None
+            os_version=Version(*struct_unpack('<BBH', data[48:52])) if flags.negotiate_version else None
         )
 
     def __bytes__(self) -> bytes:
@@ -70,12 +64,12 @@ class ChallengeMessage(NTLMMessage):
         current_payload_offset += target_info_len
 
         return b''.join([
-            NTLMMessage.signature,
+            Message.SIGNATURE,
             struct_pack('<I', self.message_type_id),
             target_name_fields,
             struct_pack('<I', int(self.negotiate_flags)),
             self.challenge,
-            self._reserved,
+            self._RESERVED,
             target_info_fields,
             version_bytes,
             target_name_bytes,

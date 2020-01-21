@@ -3,61 +3,57 @@ from dataclasses import dataclass
 from typing import Optional, ClassVar, Union
 from struct import unpack as struct_unpack, pack as struct_pack
 
-from ntlm.messages import NTLMMessage
+from ntlm.messages import Message, register_ntlm_message
 from ntlm.structures.negotiate_flags import NegotiateFlags
 from ntlm.structures.ntlmv2_response import NTLMv2Response
 from ntlm.structures.version import Version
 from ntlm.internal_utils import get_message_bytes_data, get_message_bytes_data_str
-from ntlm.exceptions import MalformedAuthenticateMessageError
+from ntlm.exceptions import MalformedMessageError, MalformedAuthenticateMessageError
 
 
+@register_ntlm_message
 @dataclass
-class AuthenticateMessage(NTLMMessage):
+class AuthenticateMessage(Message):
+    MESSAGE_TYPE_ID: ClassVar[int] = 3
+    MALFORMED_MESSAGE_ERROR_CLASS: ClassVar[MalformedMessageError] = MalformedAuthenticateMessageError
+
     lm_challenge_response: bytes
     nt_challenge_response: Union[NTLMv2Response, bytes]
     domain_name: str
     user_name: str
     negotiate_flags: NegotiateFlags
-    mic: Optional[bytes] = 16 * b'\x00'
+    mic: Optional[bytes] = bytes(16)
     workstation_name: Optional[str] = None
     encrypted_random_session_key: bytes = b''
     os_version: Optional[Version] = None
 
-    message_type_id: ClassVar[int] = 3
-    _malformed_exception_class: ClassVar = MalformedAuthenticateMessageError
-
     @classmethod
-    def from_bytes(cls, message_bytes: bytes) -> AuthenticateMessage:
-        cls.check_signature(signature_data=struct_unpack('<8s', message_bytes[0:8])[0])
-        cls.check_message_type(
-            message_type_id=struct_unpack('<I', message_bytes[8:12])[0],
-            message_bytes=message_bytes
-        )
+    def _from_bytes(cls, data: bytes) -> AuthenticateMessage:
 
-        flags = NegotiateFlags.from_int(struct_unpack('<I', message_bytes[60:64])[0])
+        flags = NegotiateFlags.from_int(struct_unpack('<I', data[60:64])[0])
 
         nt_challenge_response_bytes: bytes = get_message_bytes_data(
-            message_bytes,
-            *struct_unpack('<HHI', message_bytes[20:28])
+            data,
+            *struct_unpack('<HHI', data[20:28])
         )
 
         return cls(
-            lm_challenge_response=get_message_bytes_data(message_bytes, *struct_unpack('<HHI', message_bytes[12:20])),
+            lm_challenge_response=get_message_bytes_data(data, *struct_unpack('<HHI', data[12:20])),
             nt_challenge_response=(
                 NTLMv2Response.from_bytes(nt_challenge_response_bytes)
                 if len(nt_challenge_response_bytes) > 24 else nt_challenge_response_bytes
             ),
-            domain_name=get_message_bytes_data_str(message_bytes, *struct_unpack('<HHI', message_bytes[28:36])),
-            user_name=get_message_bytes_data_str(message_bytes, *struct_unpack('<HHI', message_bytes[36:44])),
-            workstation_name=get_message_bytes_data_str(message_bytes, *struct_unpack('<HHI', message_bytes[44:52])),
+            domain_name=get_message_bytes_data_str(data, *struct_unpack('<HHI', data[28:36])),
+            user_name=get_message_bytes_data_str(data, *struct_unpack('<HHI', data[36:44])),
+            workstation_name=get_message_bytes_data_str(data, *struct_unpack('<HHI', data[44:52])),
             encrypted_random_session_key=get_message_bytes_data(
-                message_bytes,
-                *struct_unpack('<HHI', message_bytes[52:60])
+                data,
+                *struct_unpack('<HHI', data[52:60])
             ) if flags.negotiate_key_exch else b'',
             negotiate_flags=flags,
-            os_version=Version(*struct_unpack('<BBHxxxx', message_bytes[64:72])) if flags.negotiate_version else None,
+            os_version=Version(*struct_unpack('<BBHxxxx', data[64:72])) if flags.negotiate_version else None,
             # TODO: The MIC can be omitted! Support this case!
-            mic=message_bytes[72:88]
+            mic=data[72:88]
         )
 
     def __bytes__(self) -> bytes:
@@ -131,8 +127,8 @@ class AuthenticateMessage(NTLMMessage):
         current_payload_offset += encrypted_random_session_key_len
 
         return b''.join([
-            NTLMMessage.signature,
-            struct_pack('<I', self.message_type_id),
+            self.SIGNATURE,
+            struct_pack('<I', self.MESSAGE_TYPE_ID),
             lm_challenge_response_fields,
             nt_challenge_response_fields,
             domain_name_fields,
