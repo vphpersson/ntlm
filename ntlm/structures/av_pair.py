@@ -1,9 +1,10 @@
+from __future__ import annotations
 from enum import IntEnum, IntFlag
 from struct import pack as struct_pack, unpack as struct_unpack
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import List, ClassVar, Any
 
 from msdsalgs.time import filetime_to_datetime
 from msdsalgs.utils import Mask
@@ -58,18 +59,20 @@ class AVPair(ABC):
     https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/83f5e789-660d-4781-8491-5f8c6641f75e
     """
 
-    def _to_bytes_base(self, value_bytes: bytes) -> bytes:
-        return struct_pack('<HH', int(self.av_id()), len(value_bytes)) + value_bytes
+    AV_ID: ClassVar[AvId] = NotImplemented
 
-    @staticmethod
-    @abstractmethod
-    def av_id() -> AvId:
-        pass
+    def _to_bytes_base(self, value_bytes: bytes) -> bytes:
+        return struct_pack('<HH', self.AV_ID, len(value_bytes)) + value_bytes
 
     @abstractmethod
     def __bytes__(self) -> bytes:
-        pass
+        raise NotImplementedError
 
+    @abstractmethod
+    def get_value(self) -> Any:
+        raise NotImplementedError
+
+    # TODO: Make nice.
     @classmethod
     def from_id(cls, av_id: AvId, value: bytes) -> 'AVPair':
 
@@ -105,11 +108,11 @@ class AVPair(ABC):
 
 @dataclass
 class ComputerNameAVPair(AVPair):
+    AV_ID = AvId.MsvAvNbComputerName
     computer_name: str
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvNbComputerName
+    def get_value(self) -> str:
+        return self.computer_name
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.computer_name.encode(encoding='utf-16-le'))
@@ -117,11 +120,11 @@ class ComputerNameAVPair(AVPair):
 
 @dataclass
 class DomainNameAVPair(AVPair):
+    AV_ID = AvId.MsvAvNbDomainName
     domain_name: str
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvNbDomainName
+    def get_value(self) -> str:
+        return self.domain_name
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.domain_name.encode(encoding='utf-16-le'))
@@ -129,11 +132,11 @@ class DomainNameAVPair(AVPair):
 
 @dataclass
 class DnsComputerNameAVPair(AVPair):
+    AV_ID = AvId.MsvAvDnsComputerName
     dns_comptuer_name: str
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvDnsComputerName
+    def get_value(self) -> str:
+        return self.dns_comptuer_name
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.dns_comptuer_name.encode(encoding='utf-16-le'))
@@ -141,11 +144,11 @@ class DnsComputerNameAVPair(AVPair):
 
 @dataclass
 class DnsDomainNameAVPair(AVPair):
+    AV_ID = AvId.MsvAvDnsDomainName
     dns_domain_name: str
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvDnsDomainName
+    def get_value(self) -> str:
+        return self.dns_domain_name
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.dns_domain_name.encode(encoding='utf-16-le'))
@@ -153,11 +156,11 @@ class DnsDomainNameAVPair(AVPair):
 
 @dataclass
 class DnsTreeNameAVPair(AVPair):
+    AV_ID = AvId.MsvAvDnsTreeName
     dns_tree_name: str
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvDnsTreeName
+    def get_value(self) -> str:
+        return self.dns_tree_name
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.dns_tree_name.encode(encoding='utf-16-le'))
@@ -165,14 +168,14 @@ class DnsTreeNameAVPair(AVPair):
 
 @dataclass
 class TimestampAVPair(AVPair):
+    AV_ID = AvId.MsvAvTimestamp
     # NOTE: When converting a `FILETIME` to a `datetime` there is a loss of precision. To have deserialization return
     # the same value as was input, we stored the input original, input `FILETIME` value.
     filetime: bytes
     timestamp: datetime
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvTimestamp
+    def get_value(self) -> datetime:
+        return self.timestamp
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.filetime)
@@ -180,11 +183,11 @@ class TimestampAVPair(AVPair):
 
 @dataclass
 class FlagsAVPair(AVPair):
+    AV_ID = AvId.MsvAvFlags
     flags: AvFlags
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvFlags
+    def get_value(self) -> AvFlags:
+        return self.flags
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=struct_pack('<I', int(self.flags)))
@@ -192,11 +195,11 @@ class FlagsAVPair(AVPair):
 
 @dataclass
 class TargetNameAVPair(AVPair):
+    AV_ID = AvId.MsvAvTargetName
     target_name: str
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvTargetName
+    def get_value(self) -> str:
+        return self.target_name
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.target_name.encode(encoding='utf-16-le'))
@@ -204,11 +207,11 @@ class TargetNameAVPair(AVPair):
 
 @dataclass
 class ChannelBindingsAVPair(AVPair):
+    AV_ID = AvId.MsvChannelBindings
     channel_bindings: bytes
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvChannelBindings
+    def get_value(self) -> bytes:
+        return self.channel_bindings
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=self.channel_bindings)
@@ -216,11 +219,11 @@ class ChannelBindingsAVPair(AVPair):
 
 @dataclass
 class SingleHostDataAVPair(AVPair):
+    AV_ID = AvId.MsvAvSingleHost
     single_host_data: SingleHostData
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvSingleHost
+    def get_value(self) -> SingleHostData:
+        return self.single_host_data
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=bytes(self.single_host_data))
@@ -228,10 +231,10 @@ class SingleHostDataAVPair(AVPair):
 
 @dataclass
 class EOLAVPair(AVPair):
+    AV_ID = AvId.MsvAvEOL
 
-    @staticmethod
-    def av_id() -> AvId:
-        return AvId.MsvAvEOL
+    def get_value(self) -> None:
+        return None
 
     def __bytes__(self) -> bytes:
         return self._to_bytes_base(value_bytes=b'')
