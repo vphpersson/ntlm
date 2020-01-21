@@ -52,7 +52,7 @@ class AvId(IntEnum):
     MsvChannelBindings = 0x000A
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class AVPair(ABC):
     """
     [MS-NLMP]: AV_PAIR
