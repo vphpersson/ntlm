@@ -169,9 +169,13 @@ def produce_lmv2_and_ntlmv2_response(
 def ntow_v2_from_nt_hash(nt_hash: bytes, user: str, domain: str) -> bytes:
     return hmac_new(
         key=nt_hash,
-        msg=(user.upper() + domain).encode('utf-16-le'),
+        msg=(user.upper() + domain).encode(encoding='utf-16-le'),
         digestmod=hashlib_md5
     ).digest()
+
+
+def lmowf_v2_from_nt_hash(nt_hash: bytes, user: str, domain: str) -> bytes:
+    return ntow_v2_from_nt_hash(nt_hash=nt_hash, user=user, domain=domain)
 
 
 def ntowf_v1(input_bytes: bytes) -> bytes:
@@ -180,7 +184,7 @@ def ntowf_v1(input_bytes: bytes) -> bytes:
 
 def ntowf_v2(password: str, user: str, domain: str) -> bytes:
     return ntow_v2_from_nt_hash(
-        nt_hash=compute_nt_hash(input_bytes=password.encode('utf-16-le')),
+        nt_hash=compute_nt_hash(input_bytes=password.encode(encoding='utf-16-le')),
         user=user,
         domain=domain
     )
