@@ -6,7 +6,8 @@ from secrets import token_bytes
 from ntlm.messages.negotiate import NegotiateMessage
 from ntlm.messages.challenge import ChallengeMessage
 from ntlm.messages.authenticate import AuthenticateMessage
-from ntlm.operations import produce_lm_and_ntlm_response, produce_lmv2_and_ntlmv2_response, lmowf_v2, ntowf_v2
+from ntlm.operations import produce_lm_and_ntlm_response, produce_lmv2_and_ntlmv2_response, lmowf_v2, ntowf_v2, \
+    ntow_v2_from_nt_hash, lmowf_v2_from_nt_hash
 from ntlm.structures.av_pair import TimestampAVPair
 from ntlm.structures.negotiate_flags import NegotiateFlags
 
@@ -70,8 +71,16 @@ def make_ntlm_context(
         # flags_av_pair.flags.use_mic = True
 
         nt_challenge_response, lm_challenge_response, session_base_key = produce_lmv2_and_ntlmv2_response(
-            response_key_nt=ntowf_v2(password=authentication_secret, user=username, domain=domain_name),
-            response_key_lm=lmowf_v2(password=authentication_secret, user=username, domain=domain_name),
+            response_key_nt=(
+                ntowf_v2(password=authentication_secret, user=username, domain=domain_name)
+                if isinstance(authentication_secret, str)
+                else ntow_v2_from_nt_hash(nt_hash=authentication_secret, user=username, domain=domain_name)
+            ),
+            response_key_lm=(
+                lmowf_v2(password=authentication_secret, user=username, domain=domain_name)
+                if isinstance(authentication_secret, str)
+                else lmowf_v2_from_nt_hash(nt_hash=authentication_secret, user=username, domain=domain_name)
+            ),
             server_challenge=challenge_message.challenge,
             server_name=server_name,
             time=next(
