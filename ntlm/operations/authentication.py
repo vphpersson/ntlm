@@ -59,7 +59,8 @@ def compute_response(
         challenge_from_client=client_challenge,
         av_pairs=server_name
     )
-    temp = bytes(ntlm_v2_client_challenge)
+    # TODO: Figure out where it is said that there should be four null bytes at the end.
+    temp = bytes(ntlm_v2_client_challenge) + bytes(4)
 
     nt_proof_str: bytes = compute_net_ntlm_v2_hash(
         key=response_key_nt,
@@ -126,11 +127,11 @@ def produce_lm_and_ntlm_response(
         try:
             lm_hash = compute_lm_hash(input_bytes=authentication_secret.upper().encode(encoding='ascii'))
         except ValueError:
-            lm_hash = 16 * b'\x00'
+            lm_hash = bytes(16)
 
         nt_hash = compute_nt_hash(authentication_secret.encode(encoding='utf-16-le'))
     elif isinstance(authentication_secret, bytes):
-        lm_hash = 16 * b'\x00'
+        lm_hash = bytes(16)
         nt_hash = authentication_secret
     else:
         # TODO: Use proper exception.
@@ -159,9 +160,10 @@ def produce_lmv2_and_ntlmv2_response(
         time=time
     )
 
-    # "This structure is always sent in the CHALLENGE_MESSAGE."
+    # "This structure is always sent in the CHALLENGE_MESSAGE.", meaning this check is redundant.
+    # (maybe I want it anyway)
     # if challenge_message.target_information.timestamp:
-    lm_challenge_response = 24 * b'\x00'
+    lm_challenge_response = bytes(24)
 
     return nt_challenge_response, lm_challenge_response, session_base_key
 

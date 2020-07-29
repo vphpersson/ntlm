@@ -42,11 +42,11 @@ class NegotiateMessage(Message):
 
     @classmethod
     def make_ntlm_v1_negotiate(
-            cls,
-            domain_name: Optional[str] = None,
-            workstation_name: Optional[str] = None,
-            os_version: Optional[Version] = None
-    ) -> 'NegotiateMessage':
+        cls,
+        domain_name: Optional[str] = None,
+        workstation_name: Optional[str] = None,
+        os_version: Optional[Version] = None
+    ) -> NegotiateMessage:
         """
 
         :param domain_name:
@@ -72,11 +72,11 @@ class NegotiateMessage(Message):
 
     @classmethod
     def make_ntlm_v2_negotiate(
-            cls,
-            domain_name: Optional[str] = None,
-            workstation_name: Optional[str] = None,
-            os_version: Optional[Version] = None
-    ) -> 'NegotiateMessage':
+        cls,
+        domain_name: Optional[str] = None,
+        workstation_name: Optional[str] = None,
+        os_version: Optional[Version] = None
+    ) -> NegotiateMessage:
         """
 
         :param domain_name:
@@ -87,14 +87,19 @@ class NegotiateMessage(Message):
 
         return cls(
             negotiate_flags=NegotiateFlags(
-                request_target=True,
-                negotiate_ntlm=True,
-                negotiate_always_sign=True,
                 negotiate_unicode=True,
-                negotiate_key_exch=True,
-                negotiate_version=os_version is not None,
+                request_target=True,
+                negotiate_sign=True,
+                negotiate_seal=True,
+                negotiate_ntlm=True,
                 negotiate_oem_domain_supplied=domain_name is not None,
-                negotiate_oem_workstation_supplied=workstation_name is not None
+                negotiate_oem_workstation_supplied=workstation_name is not None,
+                negotiate_always_sign=True,
+                negotiate_extended_sessionsecurity=True,
+                negotiate_version=os_version is not None,
+                negotiate_128=True,
+                negotiate_key_exch=True,
+                negotiate_56=True
             ),
             domain_name=domain_name,
             workstation_name=workstation_name,
@@ -109,7 +114,8 @@ class NegotiateMessage(Message):
         current_payload_offset += len(version_bytes)
 
         domain_bytes = str.encode(
-            self.domain_name if self.negotiate_flags.negotiate_oem_domain_supplied else '', encoding='utf-16-le'
+            self.domain_name if self.negotiate_flags.negotiate_oem_domain_supplied else '',
+            encoding='utf-16-le'
         )
         domain_bytes_len = len(domain_bytes)
         domain_name_fields = struct_pack('<HHI', domain_bytes_len, domain_bytes_len, current_payload_offset)

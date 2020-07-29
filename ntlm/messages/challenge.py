@@ -65,7 +65,7 @@ class ChallengeMessage(Message):
 
         return b''.join([
             Message.SIGNATURE,
-            struct_pack('<I', self.message_type_id),
+            struct_pack('<I', self.MESSAGE_TYPE_ID),
             target_name_fields,
             struct_pack('<I', int(self.negotiate_flags)),
             self.challenge,
