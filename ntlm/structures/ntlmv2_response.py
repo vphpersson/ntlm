@@ -15,11 +15,12 @@ class NTLMv2Response:
     ntlmv2_client_challenge: NTLMv2ClientChallenge
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> 'NTLMv2Response':
+    def from_bytes(cls, data: bytes) -> NTLMv2Response:
         return cls(
             response=data[:16],
             ntlmv2_client_challenge=NTLMv2ClientChallenge.from_bytes(data[16:])
         )
 
     def __bytes__(self) -> bytes:
-        return self.response + bytes(self.ntlmv2_client_challenge)
+        # TODO: Figure out where it says that there should be four null bytes at the end.
+        return self.response + bytes(self.ntlmv2_client_challenge) + bytes(4)

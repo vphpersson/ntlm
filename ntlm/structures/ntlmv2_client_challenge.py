@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from struct import unpack as struct_unpack, pack as struct_pack
 
@@ -25,7 +26,9 @@ class NTLMv2ClientChallenge:
         return 0x01
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> 'NTLMv2ClientChallenge':
+    def from_bytes(cls, data: bytes) -> NTLMv2ClientChallenge:
+
+        # TODO: Use `ClassVar` constans.
 
         resp_type: bytes = struct_unpack('<B', data[:1])[0]
         if resp_type != 0x01:
@@ -59,14 +62,13 @@ class NTLMv2ClientChallenge:
         )
 
     def __bytes__(self) -> bytes:
+        # TODO: Use `ClassVar` constants for the reserved values.
         return b''.join((
             struct_pack('<B', self.resp_type),
             struct_pack('<B', self.hi_resp_type),
-            6 * b'\x00',
+            bytes(6),
             self.time_stamp,
             self.challenge_from_client,
-            4 * b'\x00',
+            bytes(4),
             bytes(self.av_pairs),
-            # TODO: From where did I get these? Sure they should not be here?
-            4 * b'\x00'
         ))

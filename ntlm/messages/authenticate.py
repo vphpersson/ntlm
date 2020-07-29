@@ -22,7 +22,7 @@ class AuthenticateMessage(Message):
     domain_name: str
     user_name: str
     negotiate_flags: NegotiateFlags
-    mic: Optional[bytes] = bytes(16)
+    mic: Optional[bytes] = None
     workstation_name: Optional[str] = None
     encrypted_random_session_key: bytes = b''
     os_version: Optional[Version] = None
@@ -30,7 +30,7 @@ class AuthenticateMessage(Message):
     @classmethod
     def _from_bytes(cls, data: bytes) -> AuthenticateMessage:
 
-        flags = NegotiateFlags.from_int(struct_unpack('<I', data[60:64])[0])
+        flags = NegotiateFlags.from_int(value=struct_unpack('<I', data[60:64])[0])
 
         nt_challenge_response_bytes: bytes = get_message_bytes_data(
             data,
@@ -58,19 +58,12 @@ class AuthenticateMessage(Message):
 
     def __bytes__(self) -> bytes:
         # TODO: Not sure `negotiate_version` is actually a requirement.
-        version_bytes: bytes = bytes(self.os_version) if self.negotiate_flags.negotiate_version else b''
-        mic_bytes: bytes = self.mic if self.mic is not None else b''
+        version_bytes: bytes = bytes(self.os_version) if self.negotiate_flags.negotiate_version else bytes(8)
+        mic_bytes: bytes = self.mic if self.mic is not None else bytes(16)
 
-        if version_bytes and mic_bytes:
-            current_payload_offset = 88
-        elif version_bytes and not mic_bytes:
-            current_payload_offset = 72
-        elif not version_bytes and mic_bytes:
-            current_payload_offset = 80
-        elif not version_bytes and not mic_bytes:
-            current_payload_offset = 64
-        else:
-            raise ValueError
+        # TODO: It may be the case that the MIC and Version can be omitted, saving some bytes. Support that in future.
+
+        current_payload_offset = 88
 
         lm_challenge_response_bytes_len = len(self.lm_challenge_response)
         lm_challenge_response_fields = struct_pack(
