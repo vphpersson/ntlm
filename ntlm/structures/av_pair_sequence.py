@@ -15,11 +15,13 @@ class AVPairSequence(list):
     def __init__(self, iterable=()):
         super().__init__(iterable)
 
-    def add_av_pair(self, av_pair: AVPair) -> None:
+    def add_av_pair(self, av_pair: AVPair, allow_duplicate_eol: bool = False) -> None:
         if isinstance(av_pair, EOLAVPair):
-            if len(self) == 0 or not isinstance(self[-1], EOLAVPair):
+            if allow_duplicate_eol or len(self) == 0 or not isinstance(self[-1], EOLAVPair):
                 self.append(av_pair)
-            # TODO: Should I let one add another `EOLAVPair` if one really wants to?
+            else:
+                # TODO: Use proper exception.
+                raise ValueError
         else:
             eol_av_pair = EOLAVPair() if len(self) == 0 else self.pop()
             self.extend([av_pair, eol_av_pair])

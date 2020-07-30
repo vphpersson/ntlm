@@ -1,3 +1,4 @@
+from typing import Union, ByteString, SupportsBytes
 from enum import Enum
 from hashlib import md5 as hashlib_md5
 from struct import pack as struct_pack
@@ -5,6 +6,9 @@ from hmac import new as hmac_new
 
 from Crypto.Cipher import ARC4
 
+from ntlm.messages.negotiate import NegotiateMessage
+from ntlm.messages.authenticate import AuthenticateMessage
+from ntlm.messages.challenge import ChallengeMessage
 from ntlm.structures.negotiate_flags import NegotiateFlags
 from ntlm.structures.ntlmssp_message_signature import NTLMSSPMessageSignature, NTLMSSPMessageSignatureESS
 
@@ -149,3 +153,27 @@ def sign(
             sequence_number=sequence_number
         )
 
+
+def calculate_authenticate_message_mic(
+    negotiate_message: Union[ByteString, NegotiateMessage],
+    challenge_message: Union[ByteString, ChallengeMessage],
+    authenticate_message: Union[ByteString, AuthenticateMessage],
+    exported_session_key: ByteString
+) -> bytes:
+    """
+    Calculate the MIC for an NTLM authenticate message.
+
+    The provided authenticate message should have its MIC field set to 16 null bytes.
+
+    :param negotiate_message: A representation of an NTLM negotiate message.
+    :param challenge_message: A representation of an NTLM challenge message.
+    :param authenticate_message: A representation of an NTLM challenge message.
+    :param exported_session_key:
+    :return: A NTLM authenticate message MIC.
+    """
+
+    return hmac_new(
+        key=exported_session_key,
+        msg=bytes(negotiate_message) + bytes(challenge_message) + bytes(authenticate_message),
+        digestmod='md5'
+    ).digest()

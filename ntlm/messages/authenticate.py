@@ -18,69 +18,42 @@ class AuthenticateMessage(Message):
     MALFORMED_MESSAGE_ERROR_CLASS: ClassVar[MalformedMessageError] = MalformedAuthenticateMessageError
 
     lm_challenge_response: bytes
-    nt_challenge_response: Union[NTLMv2Response, bytes]
+    nt_challenge_response: NTLMv2Response
     domain_name: str
     user_name: str
     negotiate_flags: NegotiateFlags
     workstation_name: str = ''
     encrypted_random_session_key: bytes = b''
-    os_version: Optional[Version] = None
-    mic: Optional[bytes] = None
+    os_version: Optional[Version] = Version()
+    mic: Optional[bytes] = bytes(16)
 
     @classmethod
     def _from_bytes(cls, buffer: memoryview, strict: bool = True) -> AuthenticateMessage:
-
-        # TODO: Don't check flags to see whether there is data to be extracted from the payload!
-
-        flags: NegotiateFlags = NegotiateFlags.from_int(
-            value=struct_unpack_from('<I', buffer=buffer, offset=60)[0]
-        )
-
-        nt_challenge_response_bytes: bytes = get_message_bytes_data(
-            buffer,
-            *struct_unpack_from('<HHI', buffer=buffer, offset=20),
-        )
-
         return cls(
             lm_challenge_response=get_message_bytes_data(
                 buffer,
                 *struct_unpack_from('<HHI', buffer=buffer, offset=12),
             ),
-            # TODO: What is this conditional?
-            nt_challenge_response=(
-                NTLMv2Response.from_bytes(nt_challenge_response_bytes)
-                if len(nt_challenge_response_bytes) > 24 else nt_challenge_response_bytes
+            nt_challenge_response=NTLMv2Response.from_bytes(
+                buffer=get_message_bytes_data(
+                    buffer,
+                    *struct_unpack_from('<HHI', buffer=buffer, offset=20),
+                )
             ),
-            domain_name=get_message_bytes_data_str(
-                buffer,
-                *struct_unpack_from('<HHI', buffer=buffer, offset=28)
-            ),
-            user_name=get_message_bytes_data_str(
-                buffer,
-                *struct_unpack_from('<HHI', buffer=buffer, offset=36)
-            ),
-            workstation_name=get_message_bytes_data_str(
-                buffer,
-                *struct_unpack_from('<HHI', buffer=buffer, offset=44)
-            ),
+            domain_name=get_message_bytes_data_str(buffer, *struct_unpack_from('<HHI', buffer=buffer, offset=28)),
+            user_name=get_message_bytes_data_str(buffer, *struct_unpack_from('<HHI', buffer=buffer, offset=36)),
+            workstation_name=get_message_bytes_data_str(buffer, *struct_unpack_from('<HHI', buffer=buffer, offset=44)),
             encrypted_random_session_key=get_message_bytes_data(
                 buffer,
                 *struct_unpack_from('<HHI', buffer=buffer, offset=52)
-            ) if flags.negotiate_key_exch else b'',
-            negotiate_flags=flags,
-            # TODO: Don't use the flag, use offset!
-            os_version=Version(
-                *struct_unpack_from('<BBHxxxx', buffer=buffer, offset=64)
-            ) if flags.negotiate_version else None,
-            # TODO: The MIC can be omitted! Support this case!
+            ),
+            negotiate_flags=NegotiateFlags.from_int(value=struct_unpack_from('<I', buffer=buffer, offset=60)[0]),
+            os_version=Version.from_bytes(buffer=buffer, base_offset=64),
             mic=bytes(buffer[72:88])
         )
 
     def __bytes__(self) -> bytes:
-        # TODO: Don't use flags to determine whether data should be output.
-
-        # TODO: Not sure `negotiate_version` is actually a requirement.
-        version_bytes: bytes = bytes(self.os_version) if self.negotiate_flags.negotiate_version else bytes(8)
+        version_bytes: bytes = bytes(self.os_version) if self.os_version is not None else bytes(8)
         mic_bytes: bytes = self.mic if self.mic is not None else bytes(16)
 
         # TODO: It may be the case that the MIC and Version can be omitted, saving some bytes. Support that in future.
