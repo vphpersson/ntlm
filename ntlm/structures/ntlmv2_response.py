@@ -22,9 +22,8 @@ class NTLMv2Response:
 
         return cls(
             response=bytes(buffer[:16]),
-            ntlmv2_client_challenge=NTLMv2ClientChallenge.from_bytes(buffer[16:])
+            ntlmv2_client_challenge=NTLMv2ClientChallenge.from_bytes(buffer=buffer[16:])
         )
 
     def __bytes__(self) -> bytes:
-        # TODO: Figure out where it says that there should be four null bytes at the end.
-        return self.response + bytes(self.ntlmv2_client_challenge) + bytes(4)
+        return self.response + bytes(self.ntlmv2_client_challenge)
