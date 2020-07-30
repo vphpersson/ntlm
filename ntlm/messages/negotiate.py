@@ -78,8 +78,8 @@ class NegotiateMessage(Message):
     @classmethod
     def make_ntlm_v2_negotiate(
         cls,
-        domain_name: Optional[str] = None,
-        workstation_name: Optional[str] = None,
+        domain_name: str = '',
+        workstation_name: str = '',
         os_version: Optional[Version] = None
     ) -> NegotiateMessage:
         """
@@ -98,11 +98,8 @@ class NegotiateMessage(Message):
                 negotiate_sign=True,
                 negotiate_seal=True,
                 negotiate_ntlm=True,
-                negotiate_oem_domain_supplied=domain_name is not None,
-                negotiate_oem_workstation_supplied=workstation_name is not None,
                 negotiate_always_sign=True,
                 negotiate_extended_sessionsecurity=True,
-                negotiate_version=os_version is not None,
                 negotiate_128=True,
                 negotiate_key_exch=True,
                 negotiate_56=True

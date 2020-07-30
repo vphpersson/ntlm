@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar
 from datetime import datetime
+from struct import unpack_from as struct_unpack_from
 
 from msdsalgs.time import filetime_to_datetime
 
