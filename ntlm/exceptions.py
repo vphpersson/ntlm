@@ -33,3 +33,18 @@ class UnexpectedMessageTypeError(MalformedMessageError):
 class MalformedSignatureError(MalformedMessageError):
     def __init__(self, observed_signature: bytes):
         super().__init__(message=f'Malformed NTLM signature: {observed_signature}')
+
+
+class MalformedAvPairSequenceError(Exception):
+    def __init__(self, msg: str = 'The AV pair sequence is malformed.'):
+        super().__init__(msg)
+
+
+class MultipleEOLError(MalformedAvPairSequenceError):
+    def __init__(self):
+        super().__init__('There is at least one additional AVPair after an observed EOL entry.')
+
+
+class EOLNotObservedError(MalformedAvPairSequenceError):
+    def __init__(self):
+        super().__init__('No EOL was observed.')

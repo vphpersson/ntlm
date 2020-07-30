@@ -1,17 +1,17 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional, ClassVar, Union
-from struct import unpack as struct_unpack, pack as struct_pack
+from typing import Optional, ClassVar, Union, ByteString
+from struct import pack as struct_pack, unpack_from as struct_unpack_from
 
-from ntlm.messages import Message, register_ntlm_message
+from ntlm.messages import Message
 from ntlm.structures.negotiate_flags import NegotiateFlags
 from ntlm.structures.ntlmv2_response import NTLMv2Response
 from ntlm.structures.version import Version
-from ntlm.internal_utils import get_message_bytes_data, get_message_bytes_data_str
+from ntlm._utils import get_message_bytes_data, get_message_bytes_data_str
 from ntlm.exceptions import MalformedMessageError, MalformedAuthenticateMessageError
 
 
-@register_ntlm_message
+@Message.register
 @dataclass
 class AuthenticateMessage(Message):
     MESSAGE_TYPE_ID: ClassVar[int] = 3
@@ -22,41 +22,63 @@ class AuthenticateMessage(Message):
     domain_name: str
     user_name: str
     negotiate_flags: NegotiateFlags
-    mic: Optional[bytes] = None
-    workstation_name: Optional[str] = None
+    workstation_name: str = ''
     encrypted_random_session_key: bytes = b''
     os_version: Optional[Version] = None
+    mic: Optional[bytes] = None
 
     @classmethod
-    def _from_bytes(cls, data: bytes) -> AuthenticateMessage:
+    def _from_bytes(cls, buffer: memoryview, strict: bool = True) -> AuthenticateMessage:
 
-        flags = NegotiateFlags.from_int(value=struct_unpack('<I', data[60:64])[0])
+        # TODO: Don't check flags to see whether there is data to be extracted from the payload!
+
+        flags: NegotiateFlags = NegotiateFlags.from_int(
+            value=struct_unpack_from('<I', buffer=buffer, offset=60)[0]
+        )
 
         nt_challenge_response_bytes: bytes = get_message_bytes_data(
-            data,
-            *struct_unpack('<HHI', data[20:28])
+            buffer,
+            *struct_unpack_from('<HHI', buffer=buffer, offset=20),
         )
 
         return cls(
-            lm_challenge_response=get_message_bytes_data(data, *struct_unpack('<HHI', data[12:20])),
+            lm_challenge_response=get_message_bytes_data(
+                buffer,
+                *struct_unpack_from('<HHI', buffer=buffer, offset=12),
+            ),
+            # TODO: What is this conditional?
             nt_challenge_response=(
                 NTLMv2Response.from_bytes(nt_challenge_response_bytes)
                 if len(nt_challenge_response_bytes) > 24 else nt_challenge_response_bytes
             ),
-            domain_name=get_message_bytes_data_str(data, *struct_unpack('<HHI', data[28:36])),
-            user_name=get_message_bytes_data_str(data, *struct_unpack('<HHI', data[36:44])),
-            workstation_name=get_message_bytes_data_str(data, *struct_unpack('<HHI', data[44:52])),
+            domain_name=get_message_bytes_data_str(
+                buffer,
+                *struct_unpack_from('<HHI', buffer=buffer, offset=28)
+            ),
+            user_name=get_message_bytes_data_str(
+                buffer,
+                *struct_unpack_from('<HHI', buffer=buffer, offset=36)
+            ),
+            workstation_name=get_message_bytes_data_str(
+                buffer,
+                *struct_unpack_from('<HHI', buffer=buffer, offset=44)
+            ),
             encrypted_random_session_key=get_message_bytes_data(
-                data,
-                *struct_unpack('<HHI', data[52:60])
+                buffer,
+                *struct_unpack_from('<HHI', buffer=buffer, offset=52)
             ) if flags.negotiate_key_exch else b'',
             negotiate_flags=flags,
-            os_version=Version(*struct_unpack('<BBHxxxx', data[64:72])) if flags.negotiate_version else None,
+            # TODO: Don't use the flag, use offset!
+            os_version=Version(
+                *struct_unpack_from('<BBHxxxx', buffer=buffer, offset=64)
+            ) if flags.negotiate_version else None,
             # TODO: The MIC can be omitted! Support this case!
-            mic=data[72:88]
+            mic=bytes(buffer[72:88])
         )
 
     def __bytes__(self) -> bytes:
+        # TODO: Don't use flags to determine whether data should be output.
+
         # TODO: Not sure `negotiate_version` is actually a requirement.
         version_bytes: bytes = bytes(self.os_version) if self.negotiate_flags.negotiate_version else bytes(8)
         mic_bytes: bytes = self.mic if self.mic is not None else bytes(16)
@@ -86,9 +108,7 @@ class AuthenticateMessage(Message):
 
         # TODO: "DomainName MUST be encoded in the negotiated character set."
 
-        domain_name_bytes = str.encode(
-            self.domain_name if self.negotiate_flags.negotiate_oem_domain_supplied else '', encoding='utf-16-le'
-        )
+        domain_name_bytes: bytes = self.domain_name.encode(encoding='utf-16-le')
         domain_name_bytes_len = len(domain_name_bytes)
         domain_name_fields = struct_pack('<HHI', domain_name_bytes_len, domain_name_bytes_len, current_payload_offset)
         current_payload_offset += domain_name_bytes_len
@@ -102,10 +122,7 @@ class AuthenticateMessage(Message):
 
         # TODO: "Workstation MUST be encoded in the negotiated character set."
 
-        workstation_bytes = str.encode(
-            self.workstation_name
-            if self.negotiate_flags.negotiate_oem_workstation_supplied else '', encoding='utf-16-le'
-        )
+        workstation_bytes: bytes = self.workstation_name.encode(encoding='utf-16-le')
         workstation_bytes_len = len(workstation_bytes)
         workstation_fields = struct_pack('<HHI', workstation_bytes_len, workstation_bytes_len, current_payload_offset)
         current_payload_offset += workstation_bytes_len

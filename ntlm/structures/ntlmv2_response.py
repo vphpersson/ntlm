@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from typing import ByteString
 
 from ntlm.structures.ntlmv2_client_challenge import NTLMv2ClientChallenge
 
@@ -15,10 +16,13 @@ class NTLMv2Response:
     ntlmv2_client_challenge: NTLMv2ClientChallenge
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> NTLMv2Response:
+    def from_bytes(cls, buffer: ByteString) -> NTLMv2Response:
+
+        buffer = memoryview(buffer)
+
         return cls(
-            response=data[:16],
-            ntlmv2_client_challenge=NTLMv2ClientChallenge.from_bytes(data[16:])
+            response=bytes(buffer[:16]),
+            ntlmv2_client_challenge=NTLMv2ClientChallenge.from_bytes(buffer[16:])
         )
 
     def __bytes__(self) -> bytes:
