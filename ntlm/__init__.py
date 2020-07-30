@@ -26,7 +26,7 @@ class NTLMContext:
         authentication_secret: Union[str, bytes],
         domain_name: str = '',
         lm_compatibility_level: int = 3,
-        workstation_name: str = None
+        workstation_name: str = ''
     ):
         self.user: str = username
         self.user_dom: str = domain_name
