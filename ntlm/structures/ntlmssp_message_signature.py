@@ -12,6 +12,8 @@ class NTLMSSPMessageSignature(ABC):
     @classmethod
     @abstractmethod
     def from_bytes(cls, data: bytes, base_offset: int = 0, strict: bool = True):
+        # TODO: Check to see if the instance on which this was called is not the abstract class?
+        #   In which case, throw an `NotImplementedError`?
         if strict and (version := struct_unpack_from('<I', buffer=data, offset=base_offset)) != cls.VERSION:
             # TODO: Use proper exception (the parse one?)
             raise ValueError

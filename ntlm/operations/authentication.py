@@ -9,7 +9,7 @@ from msdsalgs.time import datetime_to_filetime
 from msdsalgs.hashing import compute_lm_hash, compute_nt_hash
 from msdsalgs.crypto import transform_des_key
 
-from ntlm.structures.av_pair import AVPairSequence
+from ntlm.structures.av_pair_sequence import AVPairSequence
 from ntlm.structures.ntlmv2_response import NTLMv2Response
 from ntlm.structures.ntlmv2_client_challenge import NTLMv2ClientChallenge
 
@@ -59,8 +59,8 @@ def compute_response(
         challenge_from_client=client_challenge,
         av_pairs=server_name
     )
-    # TODO: Figure out where it is said that there should be four null bytes at the end.
-    temp = bytes(ntlm_v2_client_challenge) + bytes(4)
+
+    temp = bytes(ntlm_v2_client_challenge)
 
     nt_proof_str: bytes = compute_net_ntlm_v2_hash(
         key=response_key_nt,

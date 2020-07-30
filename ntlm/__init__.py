@@ -9,7 +9,9 @@ from ntlm.messages.authenticate import AuthenticateMessage
 from ntlm.structures.negotiate_flags import NegotiateFlags
 from ntlm.operations.authentication import produce_lm_and_ntlm_response, produce_lmv2_and_ntlmv2_response, lmowf_v2, ntowf_v2, \
     ntow_v2_from_nt_hash, lmowf_v2_from_nt_hash
-from ntlm.structures.av_pair import TimestampAVPair, TargetNameAVPair, FlagsAVPair, AvFlags
+from ntlm.structures.av_pairs.timestamp import TimestampAVPair
+from ntlm.structures.av_pairs.target_name import TargetNameAVPair
+from ntlm.structures.av_pairs.flags import FlagsAVPair, AvFlags
 from ntlm.operations.session_security import make_sign_key, make_seal_key, Mode, sign
 from ntlm.structures.ntlmssp_message_signature import NTLMSSPMessageSignature
 
@@ -128,11 +130,14 @@ class NTLMContext:
             # TODO: Use proper exception.
             raise ValueError
 
+        # TODO: I think the flags should be the same as received in the challenge message.
+
         authenticate_message = AuthenticateMessage(
             lm_challenge_response=lm_challenge_response,
             nt_challenge_response=nt_challenge_response,
             domain_name=self.user_dom,
             user_name=self.user,
+            # TODO: This is not right.
             workstation_name=str(self.workstation_name) if self.workstation_name is not None else None,
             encrypted_random_session_key=encrypted_random_session_key,
             os_version=None,
@@ -146,6 +151,7 @@ class NTLMContext:
                 negotiate_seal=True,
                 negotiate_sign=True,
                 negotiate_unicode=True,
+                # TODO: This is not right.
                 negotiate_oem_domain_supplied=self.user_dom is not None,
                 negotiate_oem_workstation_supplied=self.workstation_name is not None,
             ),
@@ -192,7 +198,7 @@ class NTLMContext:
 
         yield authenticate_message
 
-    def sign_outgoing(self, data: bytes, as_bytes: bool = False) -> Union[NTLMSSPMessageSignature, bytes]:
+    def sign(self, data: bytes, as_bytes: bool = False) -> Union[NTLMSSPMessageSignature, bytes]:
         signature: NTLMSSPMessageSignature = sign(
             cipher_handle=self.rc4_handle_client,
             signing_key=self.client_signing_key,
@@ -204,14 +210,6 @@ class NTLMContext:
 
         return bytes(signature) if as_bytes else signature
 
-    def sign_incoming(self, data: bytes, as_bytes: bool = False) -> Union[NTLMSSPMessageSignature, bytes]:
-        signature: NTLMSSPMessageSignature = sign(
-            cipher_handle=self.rc4_handle_server,
-            signing_key=self.client_signing_key,
-            data=data,
-            sequence_number=self.sequence_number,
-            negotiate_flags=self.neg_flg
-        )
-        self.sequence_number += 1
-
-        return bytes(signature) if as_bytes else signature
+    def verify_signature(self):
+        # TODO: Implement.
+        ...

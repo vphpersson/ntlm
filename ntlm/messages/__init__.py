@@ -1,11 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import ClassVar, Type, Dict
+from typing import ClassVar, Type, Dict, ByteString
 from abc import ABC, abstractmethod
-from struct import unpack as struct_unpack
+from struct import unpack_from as struct_unpack_from
 
-from ntlm.exceptions import MalformedSignatureError, UnexpectedMessageTypeError, \
-    MalformedMessageError
+from ntlm.exceptions import MalformedSignatureError, UnexpectedMessageTypeError, MalformedMessageError
 
 
 @dataclass
@@ -17,17 +16,18 @@ class Message(ABC):
     MALFORMED_MESSAGE_ERROR_CLASS: ClassVar[Type[MalformedMessageError]] = NotImplementedError
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> Message:
+    def from_bytes(cls, buffer: ByteString, base_offset: int = 0, strict: bool = True) -> Message:
 
         import ntlm.messages.negotiate
         import ntlm.messages.challenge
         import ntlm.messages.authenticate
 
-        signature_data: bytes = struct_unpack('<8s', data[0:8])[0]
-        if signature_data != cls.SIGNATURE:
-            raise MalformedSignatureError(observed_signature=signature_data)
+        buffer = memoryview(buffer)[base_offset:]
 
-        message_type_id: int = struct_unpack('<I', data[8:12])[0]
+        if strict and (signature := struct_unpack_from('<8s', buffer=buffer, offset=0)[0]) != cls.SIGNATURE:
+            raise MalformedSignatureError(observed_signature=signature)
+
+        message_type_id: int = struct_unpack_from('<I', buffer=buffer, offset=8)[0]
 
         if cls != Message:
             if message_type_id != cls.MESSAGE_TYPE_ID:
@@ -35,20 +35,20 @@ class Message(ABC):
                     observed_ntlm_message_type_id=message_type_id,
                     expected_message_type_id=cls.MESSAGE_TYPE_ID
                 )
-            return cls._from_bytes(data=data)
+            return cls._from_bytes(buffer=buffer, strict=strict)
         else:
-            return cls.MESSAGE_TYPE_ID_TO_MESSAGE_CLASS[message_type_id].from_bytes(data=data)
+            return cls.MESSAGE_TYPE_ID_TO_MESSAGE_CLASS[message_type_id].from_bytes(buffer=buffer, strict=strict)
 
     @classmethod
     @abstractmethod
-    def _from_bytes(cls, data: bytes) -> Message:
+    def _from_bytes(cls, buffer: memoryview, strict: bool = True) -> Message:
         raise NotImplementedError
 
     @abstractmethod
     def __bytes__(self) -> bytes:
         raise NotImplementedError
 
-
-def register_ntlm_message(cls: Type[Message]):
-    cls.MESSAGE_TYPE_ID_TO_MESSAGE_CLASS[cls.MESSAGE_TYPE_ID] = cls
-    return cls
+    @classmethod
+    def register(cls, ntlm_message_class: Type[Message]) -> Type[Message]:
+        cls.MESSAGE_TYPE_ID_TO_MESSAGE_CLASS[ntlm_message_class.MESSAGE_TYPE_ID] = ntlm_message_class
+        return ntlm_message_class

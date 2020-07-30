@@ -1,44 +1,49 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, ClassVar
-from struct import unpack as struct_unpack, pack as struct_pack
+from struct import pack as struct_pack, unpack_from as struct_unpack_from
 
-from ntlm.messages import Message, register_ntlm_message
+from ntlm.messages import Message
 from ntlm.structures.version import Version
 from ntlm.structures.negotiate_flags import NegotiateFlags
-from ntlm.internal_utils import get_message_bytes_data_str
+from ntlm._utils import get_message_bytes_data_str
 from ntlm.exceptions import MalformedNegotiateMessageError
 
 
-@register_ntlm_message
+@Message.register
 @dataclass
 class NegotiateMessage(Message):
     MESSAGE_TYPE_ID: ClassVar[int] = 1
     _MALFORMED_EXCEPTION_CLASS: ClassVar = MalformedNegotiateMessageError
 
     negotiate_flags: NegotiateFlags
-    domain_name: Optional[str] = None
-    workstation_name: Optional[str] = None
+    domain_name: str = ''
+    workstation_name: str = ''
     os_version: Optional[Version] = None
 
     @classmethod
-    def _from_bytes(cls, data: bytes) -> NegotiateMessage:
-        flags = NegotiateFlags.from_int(struct_unpack('<I', data[12:16])[0])
+    def _from_bytes(cls, buffer: memoryview, strict: bool = True) -> NegotiateMessage:
+        domain_name_offset: int = struct_unpack_from('<I', buffer=buffer, offset=20)[0]
+        workstation_name_offset: int = struct_unpack_from('<I', buffer=buffer, offset=28)[0]
+
+        payload_offset_start: int = min(domain_name_offset, workstation_name_offset)
 
         return cls(
-            negotiate_flags=flags,
+            negotiate_flags=NegotiateFlags.from_int(
+                value=struct_unpack_from('<I', buffer=buffer, offset=12)[0]
+            ),
             domain_name=get_message_bytes_data_str(
-                data,
-                *struct_unpack('<HHI', data[16:24])
-            ) if flags.negotiate_oem_domain_supplied else None,
+                buffer,
+                *struct_unpack_from('<HH', buffer[16:20]),
+                domain_name_offset
+            ),
             workstation_name=get_message_bytes_data_str(
-                data,
-                *struct_unpack('<HHI', data[24:32])
-            ) if flags.negotiate_oem_workstation_supplied else None,
-            os_version=Version(*struct_unpack('<BBh', data[32:36])) if flags.negotiate_version else None
+                buffer,
+                *struct_unpack_from('<HH', buffer[24:28]),
+                workstation_name_offset
+            ),
+            os_version=Version.from_bytes(buffer=buffer[32:40]) if payload_offset_start != 32 else None
         )
-
-    # TODO: Consider `negotiate_extended_sessionsecurity`. May have to reconsider all of this in the future.
 
     @classmethod
     def make_ntlm_v1_negotiate(
@@ -78,11 +83,12 @@ class NegotiateMessage(Message):
         os_version: Optional[Version] = None
     ) -> NegotiateMessage:
         """
+        Make a Negotiate message appropriate for use with NTLMv2.
 
-        :param domain_name:
-        :param workstation_name:
-        :param os_version:
-        :return:
+        :param domain_name: A domain name to be included in the Negotiate message.
+        :param workstation_name: A workstation name to be included in the Negotiate message.
+        :param os_version: An OS version to be included in the Negotiate message.
+        :return: A Negotiate message.
         """
 
         return cls(
@@ -108,25 +114,19 @@ class NegotiateMessage(Message):
 
     def __bytes__(self) -> bytes:
 
-        current_payload_offset = 32
+        current_payload_offset: int = 32
 
-        version_bytes = bytes(self.os_version) if self.negotiate_flags.negotiate_version else b''
+        version_bytes: bytes = bytes(self.os_version) if self.os_version is not None else b''
         current_payload_offset += len(version_bytes)
 
-        domain_bytes = str.encode(
-            self.domain_name if self.negotiate_flags.negotiate_oem_domain_supplied else '',
-            encoding='utf-16-le'
-        )
-        domain_bytes_len = len(domain_bytes)
-        domain_name_fields = struct_pack('<HHI', domain_bytes_len, domain_bytes_len, current_payload_offset)
+        domain_bytes: bytes = self.domain_name.encode(encoding='utf-16-le')
+        domain_bytes_len: int = len(domain_bytes)
+        domain_name_fields: bytes = struct_pack('<HHI', domain_bytes_len, domain_bytes_len, current_payload_offset)
         current_payload_offset += domain_bytes_len
 
-        workstation_bytes = str.encode(
-            self.workstation_name if self.negotiate_flags.negotiate_oem_workstation_supplied else '',
-            encoding='utf-16-le'
-        )
-        workstation_bytes_len = len(workstation_bytes)
-        workstation_fields = struct_pack(
+        workstation_bytes: bytes = self.workstation_name.encode(encoding='utf-16-le')
+        workstation_bytes_len: int = len(workstation_bytes)
+        workstation_fields: bytes = struct_pack(
             '<HHI',
             workstation_bytes_len,
             workstation_bytes_len,
