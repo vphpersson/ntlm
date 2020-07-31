@@ -41,6 +41,7 @@ class NTLMContext:
 
         self.neg_flg: Optional[NegotiateFlags] = None
         self.exported_session_key: Optional[bytes] = None
+        self.encrypted_random_session_key: Optional[bytes] = None
 
         self.client_signing_key: Optional[bytes] = None
         self.client_sealing_key: Optional[bytes] = None
@@ -83,7 +84,6 @@ class NTLMContext:
         self,
         lm_challenge_response: bytes,
         nt_challenge_response: NTLMv2Response,
-        encrypted_random_session_key: bytes,
         negotiate_message: Union[ByteString, NegotiateMessage],
         challenge_message: Union[ByteString, ChallengeMessage]
     ) -> AuthenticateMessage:
@@ -93,7 +93,7 @@ class NTLMContext:
             domain_name=self.user_dom,
             user_name=self.user,
             workstation_name=self.workstation_name,
-            encrypted_random_session_key=encrypted_random_session_key,
+            encrypted_random_session_key=self.encrypted_random_session_key,
             negotiate_flags=self.neg_flg,
             os_version=self.version
         )
@@ -190,19 +190,18 @@ class NTLMContext:
 
         if challenge_message.negotiate_flags.negotiate_key_exch:
             self.exported_session_key: bytes = token_bytes(nbytes=16)
-            encrypted_random_session_key: bytes = ARC4.new(
+            self.encrypted_random_session_key: bytes = ARC4.new(
                 key=key_exchange_key
             ).encrypt(plaintext=self.exported_session_key)
         else:
             self.exported_session_key: bytes = key_exchange_key
-            encrypted_random_session_key: bytes = b''
+            self.encrypted_random_session_key: bytes = b''
 
         self._make_keys_and_cipher_handles()
 
         yield self._make_authenticate_message(
             lm_challenge_response=lm_challenge_response,
             nt_challenge_response=nt_challenge_response,
-            encrypted_random_session_key=encrypted_random_session_key,
             negotiate_message=negotiate_message,
             challenge_message=challenge_message
         )
