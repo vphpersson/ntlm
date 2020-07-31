@@ -40,6 +40,7 @@ class NTLMContext:
         self.lm_compatibility_level = lm_compatibility_level
 
         self.neg_flg: Optional[NegotiateFlags] = None
+        self.exported_session_key: Optional[bytes] = None
 
         self.client_signing_key: Optional[bytes] = None
         self.client_sealing_key: Optional[bytes] = None
@@ -50,28 +51,28 @@ class NTLMContext:
         self.rc4_handle_client: Optional[ARC4] = None
         self.rc4_handle_server: Optional[ARC4] = None
 
-    def _make_keys_and_cipher_handles(self, exported_session_key: bytes):
+    def _make_keys_and_cipher_handles(self):
         self.client_signing_key: bytes = make_sign_key(
             negotiate_flags=self.neg_flg,
-            exported_session_key=exported_session_key,
+            exported_session_key=self.exported_session_key,
             mode=Mode.CLIENT
         )
 
         self.server_signing_key: bytes = make_sign_key(
             negotiate_flags=self.neg_flg,
-            exported_session_key=exported_session_key,
+            exported_session_key=self.exported_session_key,
             mode=Mode.SERVER
         )
 
         self.client_sealing_key: bytes = make_seal_key(
             negotiate_flags=self.neg_flg,
-            exported_session_key=exported_session_key,
+            exported_session_key=self.exported_session_key,
             mode=Mode.CLIENT
         )
 
         self.server_sealing_key: bytes = make_seal_key(
             negotiate_flags=self.neg_flg,
-            exported_session_key=exported_session_key,
+            exported_session_key=self.exported_session_key,
             mode=Mode.SERVER
         )
 
@@ -84,8 +85,7 @@ class NTLMContext:
         nt_challenge_response: NTLMv2Response,
         encrypted_random_session_key: bytes,
         negotiate_message: Union[ByteString, NegotiateMessage],
-        challenge_message: Union[ByteString, ChallengeMessage],
-        exported_session_key: ByteString
+        challenge_message: Union[ByteString, ChallengeMessage]
     ) -> AuthenticateMessage:
         authenticate_message = AuthenticateMessage(
             lm_challenge_response=lm_challenge_response,
@@ -102,7 +102,7 @@ class NTLMContext:
             negotiate_message=negotiate_message,
             challenge_message=challenge_message,
             authenticate_message=authenticate_message,
-            exported_session_key=exported_session_key
+            exported_session_key=self.exported_session_key
         )
 
         return authenticate_message
@@ -189,23 +189,22 @@ class NTLMContext:
         key_exchange_key: bytes = session_base_key
 
         if challenge_message.negotiate_flags.negotiate_key_exch:
-            exported_session_key: bytes = token_bytes(nbytes=16)
+            self.exported_session_key: bytes = token_bytes(nbytes=16)
             encrypted_random_session_key: bytes = ARC4.new(
                 key=key_exchange_key
-            ).encrypt(plaintext=exported_session_key)
+            ).encrypt(plaintext=self.exported_session_key)
         else:
-            exported_session_key: bytes = key_exchange_key
+            self.exported_session_key: bytes = key_exchange_key
             encrypted_random_session_key: bytes = b''
 
-        self._make_keys_and_cipher_handles(exported_session_key=exported_session_key)
+        self._make_keys_and_cipher_handles()
 
         yield self._make_authenticate_message(
             lm_challenge_response=lm_challenge_response,
             nt_challenge_response=nt_challenge_response,
             encrypted_random_session_key=encrypted_random_session_key,
             negotiate_message=negotiate_message,
-            challenge_message=challenge_message,
-            exported_session_key=exported_session_key
+            challenge_message=challenge_message
         )
 
     def sign(self, data: bytes, as_bytes: bool = False) -> Union[NTLMSSPMessageSignature, bytes]:
