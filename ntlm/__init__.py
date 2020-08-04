@@ -1,4 +1,5 @@
-from typing import Union, Optional, Generator, ByteString
+from types import TracebackType
+from typing import Union, Optional, Generator, ByteString, Type
 from copy import deepcopy
 from secrets import token_bytes
 
@@ -21,7 +22,7 @@ from ntlm.operations.session_security import make_sign_key, make_seal_key, Mode,
 from Crypto.Cipher import ARC4
 
 
-class NTLMContext:
+class NTLMContext(Generator):
 
     def __init__(
         self,
@@ -30,7 +31,8 @@ class NTLMContext:
         domain_name: str = '',
         workstation_name: str = '',
         version: Version = Version(),
-        lm_compatibility_level: int = 3
+        lm_compatibility_level: int = 3,
+        negotiate_message: Optional[NegotiateMessage] = None
     ):
         self.user: str = username
         self.user_dom: str = domain_name
@@ -38,6 +40,8 @@ class NTLMContext:
         self.workstation_name: str = workstation_name
         self.version: Version = version
         self.lm_compatibility_level = lm_compatibility_level
+
+        self._context = self._make_context(negotiate_message=negotiate_message)
 
         self.neg_flg: Optional[NegotiateFlags] = None
         self.exported_session_key: Optional[bytes] = None
@@ -138,7 +142,7 @@ class NTLMContext:
 
         return server_name
 
-    def initiate(
+    def _make_context(
         self,
         negotiate_message: Optional[NegotiateMessage] = None
     ) -> Generator[Union[NegotiateMessage, AuthenticateMessage], ChallengeMessage, None]:
@@ -221,3 +225,23 @@ class NTLMContext:
     def verify_signature(self):
         # TODO: Implement.
         ...
+
+    def __next__(self) -> Union[NegotiateMessage, AuthenticateMessage]:
+        return self._context.__next__()
+
+    def send(self, value: ChallengeMessage) -> Union[NegotiateMessage, AuthenticateMessage]:
+        return self._context.send(value=value)
+
+    def throw(
+        self,
+        typ: Type[BaseException],
+        val: Optional[BaseException] = None,
+        tb: Optional[TracebackType] = None
+    ) -> Union[NegotiateMessage, AuthenticateMessage]:
+        return self._context.throw(typ=typ, val=val, tb=tb)
+
+    def close(self) -> None:
+        return self._context.close()
+
+    def __iter__(self) -> Generator[Union[NegotiateMessage, AuthenticateMessage], ChallengeMessage, None]:
+        return self._context.__iter__()
