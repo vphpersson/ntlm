@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional, ClassVar, Union, ByteString
+from typing import Optional, ClassVar
 from struct import pack as struct_pack, unpack_from as struct_unpack_from
 
 from ntlm.messages import Message
