@@ -226,11 +226,13 @@ class NTLMContext(Generator):
         # TODO: Implement.
         ...
 
+    # `Generator` methods.
+
     def __next__(self) -> Union[NegotiateMessage, AuthenticateMessage]:
         return self._context.__next__()
 
     def send(self, value: ChallengeMessage) -> Union[NegotiateMessage, AuthenticateMessage]:
-        return self._context.send(value=value)
+        return self._context.send(value)
 
     def throw(
         self,
@@ -238,7 +240,7 @@ class NTLMContext(Generator):
         val: Optional[BaseException] = None,
         tb: Optional[TracebackType] = None
     ) -> Union[NegotiateMessage, AuthenticateMessage]:
-        return self._context.throw(typ=typ, val=val, tb=tb)
+        return self._context.throw(typ, val, tb)
 
     def close(self) -> None:
         return self._context.close()
