@@ -16,7 +16,7 @@ class TimestampAVPair(AVPair):
     LABEL: ClassVar[str] = 'Server time'
 
     # NOTE: When converting a `FILETIME` to a `datetime` there is a loss of precision. To have deserialization return
-    # the same value as was input, we stored the input original, input `FILETIME` value.
+    # the same value as was input, the original, input `FILETIME` value is also stored.
     filetime: bytes
     timestamp: datetime
 

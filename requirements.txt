@@ -1,2 +1,2 @@
--e git+ssh://git@github.com/vphpersson/msdsalgs.git#egg=msdsalgs
+git+https://github.com/vphpersson/msdsalgs.git#egg=msdsalgs
 pycryptodome

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import ClassVar, Dict, Type, Any, ByteString, List
+from typing import ClassVar, Type, Any, ByteString
 from enum import IntEnum
 from abc import ABC, abstractmethod
 from struct import pack as struct_pack, unpack_from as struct_unpack_from
@@ -33,7 +33,7 @@ class AVPair(ABC):
     AV_ID: ClassVar[AvId] = NotImplemented
     LABEL: ClassVar[str] = NotImplemented
 
-    AV_ID_TO_AV_PAIR_CLASS: ClassVar[Dict[AvId, Type[AVPair]]] = {}
+    AV_ID_TO_AV_PAIR_CLASS: ClassVar[dict[AvId, Type[AVPair]]] = {}
 
     def _to_bytes_base(self, value_bytes: bytes) -> bytes:
         return struct_pack('<HH', self.AV_ID, len(value_bytes)) + value_bytes

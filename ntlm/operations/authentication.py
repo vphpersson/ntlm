@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union, ByteString
+from typing import Optional, ByteString
 from hmac import new as hmac_new
 from hashlib import md5 as hashlib_md5, new as hashlib_new
 from secrets import token_bytes
@@ -101,7 +101,7 @@ def compute_response(
     server_name: AVPairSequence,
     client_challenge: Optional[bytes] = None,
     time: Optional[bytes] = None
-) -> Tuple[NTLMv2Response, bytes, bytes]:
+) -> tuple[NTLMv2Response, bytes, bytes]:
     """
 
 
@@ -182,9 +182,9 @@ def produce_nt_response(nt_hash: bytes, server_challenge: bytes) -> bytes:
 
 
 def produce_lm_and_ntlm_response(
-    authentication_secret: Union[str, bytes],
+    authentication_secret: str | bytes,
     server_challenge: bytes
-) -> Tuple[bytes, bytes]:
+) -> tuple[bytes, bytes]:
     """
 
     :param authentication_secret: Either a password or a NT hash, differentiated by type.

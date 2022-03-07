@@ -5,6 +5,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         'pycryptodome',
-        'msdsalgs @ git+ssh://git@github.com/vphpersson/msdsalgs.git#egg=msdsalgs',
+        'msdsalgs @ git+https://github.com/vphpersson/msdsalgs.git#egg=msdsalgs',
     ]
 )

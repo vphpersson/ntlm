@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import ByteString, List
+from typing import ByteString
 from struct import unpack_from as struct_unpack_from
 
 from ntlm.structures.av_pairs import AVPair
@@ -39,7 +39,7 @@ class AVPairSequence(list):
 
         offset = 0
         eol_observed = False
-        av_pairs_list: List[AVPair] = []
+        av_pairs_list: list[AVPair] = []
 
         while offset + 4 <= len(buffer):
             av_pair = AVPair.from_bytes(buffer=buffer[offset:])
