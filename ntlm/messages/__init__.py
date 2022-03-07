@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import ClassVar, Type, Dict, ByteString
+from typing import ClassVar, Type, ByteString
 from abc import ABC, abstractmethod
 from struct import unpack_from as struct_unpack_from
 
@@ -10,7 +10,7 @@ from ntlm.exceptions import MalformedSignatureError, UnexpectedMessageTypeError,
 @dataclass
 class Message(ABC):
     SIGNATURE: ClassVar[bytes] = b'NTLMSSP\x00'
-    MESSAGE_TYPE_ID_TO_MESSAGE_CLASS: ClassVar[Dict[int, Type[Message]]] = {}
+    MESSAGE_TYPE_ID_TO_MESSAGE_CLASS: ClassVar[dict[int, Type[Message]]] = {}
 
     MESSAGE_TYPE_ID: ClassVar[int] = NotImplemented
     MALFORMED_MESSAGE_ERROR_CLASS: ClassVar[Type[MalformedMessageError]] = NotImplementedError

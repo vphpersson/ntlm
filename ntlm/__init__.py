@@ -1,5 +1,5 @@
 from types import TracebackType
-from typing import Union, Optional, Generator, ByteString, Type
+from typing import Optional, Generator, ByteString, Type
 from copy import deepcopy
 from secrets import token_bytes
 
@@ -27,7 +27,7 @@ class NTLMContext(Generator):
     def __init__(
         self,
         username: str,
-        authentication_secret: Union[str, bytes],
+        authentication_secret: str | bytes,
         domain_name: str = '',
         workstation_name: str = '',
         version: Version = Version(),
@@ -36,7 +36,7 @@ class NTLMContext(Generator):
     ):
         self.user: str = username
         self.user_dom: str = domain_name
-        self.authentication_secret: Union[str, bytes] = authentication_secret
+        self.authentication_secret: str | bytes = authentication_secret
         self.workstation_name: str = workstation_name
         self.version: Version = version
         self.lm_compatibility_level = lm_compatibility_level
@@ -88,8 +88,8 @@ class NTLMContext(Generator):
         self,
         lm_challenge_response: bytes,
         nt_challenge_response: NTLMv2Response,
-        negotiate_message: Union[ByteString, NegotiateMessage],
-        challenge_message: Union[ByteString, ChallengeMessage]
+        negotiate_message: ByteString | NegotiateMessage,
+        challenge_message: ByteString | ChallengeMessage
     ) -> AuthenticateMessage:
         authenticate_message = AuthenticateMessage(
             lm_challenge_response=lm_challenge_response,
@@ -145,7 +145,7 @@ class NTLMContext(Generator):
     def _make_context(
         self,
         negotiate_message: Optional[NegotiateMessage] = None
-    ) -> Generator[Union[NegotiateMessage, AuthenticateMessage], ChallengeMessage, None]:
+    ) -> Generator[NegotiateMessage | AuthenticateMessage, ChallengeMessage, None]:
         """
         Initiate an NTLM authentication procedure.
 
@@ -210,7 +210,7 @@ class NTLMContext(Generator):
             challenge_message=challenge_message
         )
 
-    def sign(self, data: bytes, as_bytes: bool = False) -> Union[NTLMSSPMessageSignature, bytes]:
+    def sign(self, data: bytes, as_bytes: bool = False) -> NTLMSSPMessageSignature | bytes:
         signature: NTLMSSPMessageSignature = sign(
             cipher_handle=self.rc4_handle_client,
             signing_key=self.client_signing_key,
@@ -228,10 +228,10 @@ class NTLMContext(Generator):
 
     # `Generator` methods.
 
-    def __next__(self) -> Union[NegotiateMessage, AuthenticateMessage]:
+    def __next__(self) -> NegotiateMessage | AuthenticateMessage:
         return self._context.__next__()
 
-    def send(self, value: ChallengeMessage) -> Union[NegotiateMessage, AuthenticateMessage]:
+    def send(self, value: ChallengeMessage) -> NegotiateMessage | AuthenticateMessage:
         return self._context.send(value)
 
     def throw(
@@ -239,11 +239,11 @@ class NTLMContext(Generator):
         typ: Type[BaseException],
         val: Optional[BaseException] = None,
         tb: Optional[TracebackType] = None
-    ) -> Union[NegotiateMessage, AuthenticateMessage]:
+    ) -> NegotiateMessage | AuthenticateMessage:
         return self._context.throw(typ, val, tb)
 
     def close(self) -> None:
         return self._context.close()
 
-    def __iter__(self) -> Generator[Union[NegotiateMessage, AuthenticateMessage], ChallengeMessage, None]:
+    def __iter__(self) -> Generator[NegotiateMessage | AuthenticateMessage, ChallengeMessage, None]:
         return self._context.__iter__()
